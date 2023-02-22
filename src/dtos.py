@@ -39,6 +39,7 @@ class V1RequestBase(object):
     # V1Request
     url: str = None
     postData: str = None
+    postJsonData: str = None
     returnOnlyCookies: bool = None
     download: bool = None   # deprecated v2.0.0, not used
     returnRawHtml: bool = None  # deprecated v2.0.0, not used

@@ -25,6 +25,8 @@ COPY --from=builder /*.deb /
 #    apt-cache madison chromium
 WORKDIR /app
     # Install dummy packages
+COPY src .
+COPY package.json ../
 RUN dpkg -i /libgl1-mesa-dri.deb \
     && dpkg -i /adwaita-icon-theme.deb \
     # Install dependencies
@@ -38,7 +40,8 @@ RUN dpkg -i /libgl1-mesa-dri.deb \
     # Create flaresolverr user
     && useradd --home-dir /app --shell /bin/sh flaresolverr \
     && mv /usr/bin/chromedriver chromedriver \
-    && chown -R flaresolverr:flaresolverr .
+    && chown -R flaresolverr:flaresolverr . \
+    && chown -R flaresolverr:flaresolverr ../package.json
 
 # Install Python dependencies
 COPY requirements.txt .
@@ -47,9 +50,6 @@ RUN pip install -r requirements.txt \
     && rm -rf /root/.cache
 
 USER flaresolverr
-
-COPY src .
-COPY package.json ../
 
 EXPOSE 8191
 

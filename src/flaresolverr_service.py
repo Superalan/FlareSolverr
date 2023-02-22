@@ -158,6 +158,9 @@ def _cmd_request_post(req: V1RequestBase) -> V1ResponseBase:
         logging.warning("Request parameter 'download' was removed in FlareSolverr v2.")
 
     challenge_res = _resolve_challenge(req, 'POST')
+    if req.postJsonData is not None:
+         challenge_res = _resolve_challenge(req, 'POST-JSON')
+    
     res = V1ResponseBase({})
     res.status = challenge_res.status
     res.message = challenge_res.message
@@ -187,10 +190,18 @@ def _evil_logic(req: V1RequestBase, driver: WebDriver, method: str) -> Challenge
 
     # navigate to the page
     logging.debug(f'Navigating to... {req.url}')
+    if method == 'POST-JSON':
+        _post_json_request(req, driver)
     if method == 'POST':
         _post_request(req, driver)
     else:
         driver.get(req.url)
+        logging.debug(f'req.cookies... {req.cookies}')
+        for i, cookie in enumerate(req.cookies):
+            logging.debug(f'req.cookie... {cookie}')
+            driver.add_cookie(cookie)
+        driver.get(req.url)
+    
     if utils.get_config_log_html():
         logging.debug(f"Response HTML:\n{driver.page_source}")
 
@@ -305,3 +316,13 @@ def _post_request(req: V1RequestBase, driver: WebDriver):
         </body>
         </html>"""
     driver.get("data:text/html;charset=utf-8," + html_content)
+
+def _post_json_request(req: V1RequestBase, driver: WebDriver):
+    js = '''var xhr = new XMLHttpRequest();
+        xhr.open('POST', \''''+ req.url + '''\', false);
+        xhr.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
+
+        xhr.send(JSON.stringify('''+req.postJsonData+'''));
+        return xhr.response;'''
+    logging.debug("post js: " + js)
+    result = driver.execute_script(js);
