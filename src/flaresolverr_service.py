@@ -318,11 +318,17 @@ def _post_request(req: V1RequestBase, driver: WebDriver):
     driver.get("data:text/html;charset=utf-8," + html_content)
 
 def _post_json_request(req: V1RequestBase, driver: WebDriver):
-    js = '''var xhr = new XMLHttpRequest();
+    driver.get(req.url)
+    for i, cookie in enumerate(req.cookies):
+        logging.debug(f'req.cookie... {cookie}')
+        driver.add_cookie(cookie)
+    js = '''
+        var xhr = new XMLHttpRequest();
         xhr.open('POST', \''''+ req.url + '''\', false);
         xhr.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
 
         xhr.send(JSON.stringify('''+req.postJsonData+'''));
         return xhr.response;'''
-    logging.debug("post js: " + js)
-    result = driver.execute_script(js);
+    logging.debug("post js: " + js);
+    result = driver.execute_script(js)
+    logging.debug("post js result: " + result)
