@@ -187,11 +187,12 @@ def _evil_logic(req: V1RequestBase, driver: WebDriver, method: str) -> Challenge
     res = ChallengeResolutionT({})
     res.status = STATUS_OK
     res.message = ""
+    post_res: str = None
 
     # navigate to the page
     logging.debug(f'Navigating to... {req.url}')
     if method == 'POST-JSON':
-        _post_json_request(req, driver)
+        post_res = _post_json_request(req, driver)
     if method == 'POST':
         _post_request(req, driver)
     else:
@@ -281,8 +282,10 @@ def _evil_logic(req: V1RequestBase, driver: WebDriver, method: str) -> Challenge
 
     if not req.returnOnlyCookies:
         challenge_res.headers = {}  # todo: fix, selenium not provides this info
-        challenge_res.response = driver.page_source
-
+        if (post_res == None):
+            challenge_res.response = driver.page_source
+        else:
+            challenge_res.response = post_res
     res.result = challenge_res
     return res
 
@@ -317,7 +320,7 @@ def _post_request(req: V1RequestBase, driver: WebDriver):
         </html>"""
     driver.get("data:text/html;charset=utf-8," + html_content)
 
-def _post_json_request(req: V1RequestBase, driver: WebDriver):
+def _post_json_request(req: V1RequestBase, driver: WebDriver) -> str:
     driver.get(req.url)
     for i, cookie in enumerate(req.cookies):
         logging.debug(f'req.cookie... {cookie}')
@@ -329,6 +332,7 @@ def _post_json_request(req: V1RequestBase, driver: WebDriver):
 
         xhr.send(JSON.stringify('''+req.postJsonData+'''));
         return xhr.response;'''
-    logging.debug("post js: " + js);
+    logging.debug("post js: " + js)
     result = driver.execute_script(js)
-    logging.debug("post js result: " + result)
+    logging.debug("post js result: " + result + " type: " + type(result))
+    return result
