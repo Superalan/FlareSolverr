@@ -5,6 +5,7 @@ import re
 import shutil
 
 from selenium.webdriver.chrome.webdriver import WebDriver
+from selenium.webdriver.common.proxy import *
 import undetected_chromedriver as uc
 
 FLARESOLVERR_VERSION = None
@@ -46,8 +47,16 @@ def get_webdriver(proxy) -> WebDriver:
     options.add_argument('--disable-dev-shm-usage')
     # this option removes the zygote sandbox (it seems that the resolution is a bit faster)
     options.add_argument('--no-zygote')
-    if proxy is not None:
-        options.add_argument('--proxy-server=http://%s' % proxy)
+
+    proxyCap = Proxy({
+        'proxyType': ProxyType.MANUAL,
+        'httpProxy': proxy,
+        'sslProxy': proxy,
+        'noProxy': ''
+    })
+
+    capabilities = WebDriver.DesiredCapabilities.CHROME
+    proxyCap.add_to_capabilities(capabilities)
 
     # note: headless mode is detected (options.headless = True)
     # we launch the browser in head-full mode with the window hidden
@@ -72,7 +81,7 @@ def get_webdriver(proxy) -> WebDriver:
     # downloads and patches the chromedriver
     # if we don't set driver_executable_path it downloads, patches, and deletes the driver each time
     driver = uc.Chrome(options=options, driver_executable_path=driver_exe_path, version_main=version_main,
-                       windows_headless=windows_headless)
+                       windows_headless=windows_headless, desired_capabilities=capabilities)
 
     # save the patched driver to avoid re-downloads
     if driver_exe_path is None:
